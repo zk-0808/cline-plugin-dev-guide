@@ -5,12 +5,14 @@
 > This document is an independent technical reference based on source code inspection and runtime experiments. It is **not affiliated** with the Cline project. The details described here were verified on specific versions (see "Verified On" below) and may differ from newer releases.
 
 > **Verified On**
-> - Cline CLI 3.0.31
+> - Cline CLI 3.0.37
 > - VS Code Extension 4.0.0
-> - SDK v0.0.51
-> - Date: 2026-06-28
+> - SDK v0.0.56
+> - Date: 2026-07-07
 
 > **Purpose**: A navigational map of the Cline Plugin subsystem. When you encounter a plugin issue, start here — locate the lifecycle stage, then the file, then the function.
+>
+> **Related**: This atlas is the platform-level supplement to the [Governance Framework Developer Guide](README.md). For framework-specific design and development, see [design-thinking.md](design-thinking.md) and [development-guide.md](development-guide.md).
 
 ---
 
@@ -304,4 +306,4 @@ Alternatives:
 
 ---
 
-*Generated from Cline SDK source analysis, 2026-06-28. Verified against CLI 3.0.31 and VS Code extension 4.0.0.*
+*Generated from Cline SDK source analysis, 2026-07-07. Verified against CLI 3.0.37 and VS Code extension 4.0.0.*

@@ -1,152 +1,152 @@
-# Unofficial Cline Plugin Development Guide
+# Cline Governance Framework 开发者指南
 
-> **⚠️ Community Guide**
+> **生命周期**：永久保留——开发者入口文档，随版本更新。
 >
-> This is an independent community-maintained guide based on:
-> - Source code inspection (SDK v0.0.51)
-> - Runtime experiments (CLI 3.0.31 / VS Code Extension 4.0.0)
-> - Plugin development experience (handoff-plugin)
->
-> It is **not affiliated** with the Cline project. Details were verified on specific versions and may differ from newer releases.
+> **目标读者**：想用本框架治理 Cline AI agent 的开发者。读完这两份文档，不用重新读源码就能上手开发。
 
 ---
 
-## Highlights
+## 这是什么
 
-| Area | Rating | Description |
-|------|--------|-------------|
-| **Architecture Atlas** | ⭐⭐⭐⭐⭐ | 7-layer Plugin lifecycle map — from discovery to registry |
-| **Sandbox Internals** | ⭐⭐⭐⭐⭐ | How the subprocess sandbox works (and doesn't work) |
-| **Debug Flow** | ⭐⭐⭐⭐⭐ | Step-by-step troubleshooting for common plugin issues |
-| **VS Code Workaround** | ⭐⭐ | Temporary — likely obsolete in 4.0.1+ |
+一套 **Cline AI agent 治理框架**，用五层架构组织"会话交接 / 证据治理 / 评审纪律 / 经验沉淀"：
+
+| 层 | 目录 | 职责 |
+|----|------|------|
+| L1 Core | `.governance/core/` | 跨项目通用宪法 |
+| L2 Rules | `.governance/rules/` | 装好即生效的薄入口 |
+| L3 Capability | `.governance/capabilities/` | "怎么做"的代码模块 |
+| L4 Hooks | `.governance/hooks/` | "什么时候调用"的事件驱动检查 |
+| L5 Runtime | `HANDOFF.md` + `.governance/runtime/` | 动态状态文件 |
+
+框架模板仓库：[https://github.com/zk-0808/cline-plus.git](https://github.com/zk-0808/cline-plus.git)
 
 ---
 
-## What's Inside
+## 文档导航
 
-```
-📦 cline-plugin-dev-guide
- ┣ 📄 README.md                          ← This file — overview + quick start
- ┣ 📄 cline-plugin-architecture-atlas.md  ← ★★★★★ Architecture Atlas (core value)
- ┗ 📁 scripts/
-    ┣ 📄 patch-vscode-plugin-support.ps1  ← Windows: copy bootstrap to VS Code
-    ┗ 📄 patch-vscode-plugin-support.sh   ← macOS/Linux: same workaround
-```
+本指南拆成两份文档，按你的需求选择：
 
-### Architecture Atlas (core value)
+### 📖 [设计思考与实验发现](design-thinking.md)
 
-The [`cline-plugin-architecture-atlas.md`](cline-plugin-architecture-atlas.md) is a navigational map of the Cline Plugin subsystem. It covers:
+**读这份如果你想知道"为什么"**——框架的设计依据、源码探查发现、A/B 测试结论。
 
-- **Repository Map** — 7 source files that comprise the entire plugin subsystem
-- **7-Layer Plugin Lifecycle** — Discovery → Install → Load → Module Import → Sandbox → Runtime → Registry
-- **Per-Layer API Reference** — key functions, signatures, error modes
-- **Quick Debug Flow** — "Plugin not loading?" → where to look, what file, what function
-- **Cross-Cutting Concerns** — timeout strategy, SDK dependency isolation, crash recovery
-- **File → Function → Line Quick Reference**
+- 框架设计哲学与 ADR 演进
+- Cline System Prompt 分层注入机制（源码穿透结论）
+- 协同前缀效应（A/B 测试 Round 1 + Round 2，n=10）
+- Rule 失效 6 场景诊断决策树
+- 为什么不改源码（3 方案评估 + 负面影响）
+- 8 条方法论教训
 
-This content is stable across Cline versions and will remain valuable long-term.
+### 🔧 [实践开发指南](development-guide.md)
 
-### VS Code Workaround (temporary)
+**读这份如果你想知道"怎么写代码"**——平台 API、开发步骤、诊断方法。
 
-The scripts in `scripts/` address a known limitation in VS Code Extension 4.0.0:
+- Quickstart：30 分钟从 clone 到跑通
+- Cline 插件平台 7 层生命周期 + 扩展点速查
+- 框架目录契约与加载顺序
+- Capability 开发 7 步 SOP + 代码骨架
+- 诊断手册（plugin 不加载 / rule 不生效 / codec bug）
+- 已知局限与路线图
 
-| Observation | Confidence | Evidence |
-|-------------|-----------|----------|
-| Bootstrap file `plugin-sandbox-bootstrap.js` absent from extension `dist/` | High | Filesystem search — zero hits |
-| Build tooling does not emit bootstrap as standalone file | High | CLI build includes it; bundle contains loading code |
-| Workaround verified | High | 7 real compaction events tested |
+### 🗺️ [Cline Plugin Architecture Atlas](cline-plugin-architecture-atlas.md)
 
-**If you're on VS Code Extension 4.0.0**:
+**通用 Cline 插件平台深入参考**——逐层函数级架构地图，想深入 Cline 源码时查阅。
+
+- 7 层生命周期逐层函数签名、错误模式
+- 文件 → 函数 → 行号速查表
+- 跨层关注点（超时策略、SDK 隔离、崩溃恢复）
+
+---
+
+## Quickstart
+
+### 1. 获取框架
 
 ```bash
-# 1. Install Cline CLI (needed as bootstrap source)
-npm install -g cline
+# 方式 1: GitHub Template（推荐）
+# 到 cline-plus 仓库右上 "Use this template" → 创建你的项目 → git clone
+git clone https://github.com/zk-0808/cline-plus.git my-project
 
-# 2. Run the patch script
-# Windows:
-.\scripts\patch-vscode-plugin-support.ps1
-
-# macOS/Linux:
-chmod +x scripts/patch-vscode-plugin-support.sh
-./scripts/patch-vscode-plugin-support.sh
-
-# 3. Reload VS Code
-# Ctrl+Shift+P → "Developer: Reload Window"
+# 方式 2: 叠加到已有项目
+cd your-existing-project
+git remote add template https://github.com/zk-0808/cline-plus.git
+git fetch template main
+git checkout template/main -- .governance/ .clinerules HANDOFF.md scripts/
+git remote remove template
 ```
 
-> **Note**: This workaround is version-specific. If you're on 4.0.1+, first check whether `plugin-sandbox-bootstrap.js` exists in the extension directory before applying it.
+### 2. 改参数
 
----
+打开 `.governance/core/constitution.md` 底部"项目可调参数"区，按你的项目调整取值（阈值、路径等）。判定动作不动，只改取值。
 
-## How This Investigation Was Done
+### 3. 安装插件到 CLI
 
-Many developers have asked: *"How did you figure this out?"*
+> 以下脚本在框架模板仓库的 `scripts/` 目录中。
 
-The methodology used in this guide is reusable for any AI Agent codebase:
+```powershell
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\sync-governance-plugin.ps1
 
-```
-1. Read the SDK examples
-   → Start with official plugin examples (custom-compaction.ts is a goldmine)
-
-2. Trace the plugin lifecycle
-   → Follow the code: discoverPluginModulePaths → loadSandboxedPlugins → resolveBootstrap → importPluginModule
-
-3. Compare CLI vs VS Code builds
-   → Same SDK, different packaging — the diff reveals the root cause
-
-4. Design a runtime experiment
-   → Write a marker file in setup(); if it appears, the plugin loaded
-
-5. Formulate and test a hypothesis
-   → "Missing bootstrap file" → copy it from CLI → verify setup() executes
-
-6. Verify with real workload
-   → 7 compaction events with handoff.md + index.jsonl written correctly
+# macOS/Linux
+bash scripts/sync-governance-plugin.sh
 ```
 
-This method — **SDK → Lifecycle Trace → Cross-Build Comparison → Experiment → Hypothesis → Verification** — can be applied to any large AI Agent codebase (Cline, Claude Code, OpenHands, Continue, Cursor).
+这会把 `.governance/plugin/` 同步到 `~/.cline/plugins/installed/local/governance/`——Cline CLI 只扫描用户主目录。
 
----
-
-## Verified On
-
-| Component | Version | Status |
-|-----------|---------|--------|
-| Cline CLI | 3.0.31 | ✅ Plugins work natively |
-| VS Code Extension | 4.0.0 | ✅ With workaround (scripts/) |
-| SDK | v0.0.51 | Reference for source analysis |
-| OS | Windows / macOS / Linux | Scripts provided for all three |
-| Date | 2026-06-28 | — |
-
----
-
-## Quick Start for Plugin Developers
+### 4. 验证
 
 ```bash
-# Create a minimal plugin
-mkdir my-plugin && cd my-plugin
-npm init -y
-# Add "cline" field to package.json (see atlas for schema)
-mkdir src && echo 'export default { name: "my-plugin", setup(api) { console.log("loaded!"); } }' > src/index.ts
-
-# Install and test in CLI
-cline plugin install . --cwd .
-cline -i "hello"  # Verify plugin loads
-
-# If targeting VS Code 4.0.0:
-.\scripts\patch-vscode-plugin-support.ps1  # or the .sh equivalent
+cline -i
 ```
+
+在 CLI 里问模型：
+
+> What is the title of section 1 in Core Constitution?
+
+如果模型直接回答（不调工具），说明 rule 注入成功。
+
+检查 marker 文件是否存在：
+
+```bash
+cat .governance/runtime/plugin-loaded.marker
+# 应输出 "loaded at <timestamp>"
+```
+
+### 5. 修改代码后重新同步
+
+每次修改 `.governance/plugin/` 或 `.governance/capabilities/` 的代码后，重新执行 Step 3 的同步命令。
 
 ---
 
-## Related Resources
+## 我想做什么
 
-- [Cline Official Plugin Docs](https://docs.cline.bot/customization/plugins)
-- [Cline SDK Examples](https://github.com/cline/cline/tree/main/sdk/examples/plugins)
-- [Cline Plugin Architecture Atlas (detailed)](cline-plugin-architecture-atlas.md)
+| 我想... | 读哪里 |
+|---------|--------|
+| 30 分钟跑通 | 上面 Quickstart |
+| 理解为什么这么设计 | [设计思考](design-thinking.md) §1 |
+| 理解 prompt 注入原理 | [设计思考](design-thinking.md) §2 |
+| 看协同前缀实验数据 | [设计思考](design-thinking.md) §3 |
+| 写一个新 Capability | [开发指南](development-guide.md) §4 |
+| 理解 Cline 插件系统 | [开发指南](development-guide.md) §2 |
+| 诊断 plugin 不加载 | [开发指南](development-guide.md) §5 |
+| 知道当前有什么坑 | [开发指南](development-guide.md) §6 |
+| 深入 Cline 源码函数级 | [Architecture Atlas](cline-plugin-architecture-atlas.md) |
+| VS Code 插件不工作 | `scripts/patch-vscode-plugin-support.ps1` |
+
+---
+
+## 版本基准
+
+| 组件 | 版本 |
+|------|------|
+| Cline CLI | 3.0.37 |
+| VS Code Extension | 4.0.x（plugin 系统不可用） |
+| SDK | v0.0.56 |
+| 框架版本 | v1.0-alpha |
+| 最近更新 | 2026-07-07 |
 
 ---
 
 ## License
 
-Apache-2.0 (same as the Cline SDK examples this work is based on).
+Apache-2.0
